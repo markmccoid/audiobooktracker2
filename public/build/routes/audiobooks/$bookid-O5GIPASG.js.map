@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../app/routes/audiobooks/$bookid.tsx"],
+  "sourcesContent": ["import { useLoaderData, useParams } from \"@remix-run/react\";\r\nimport { getBookById } from \"~/data/audiobookGet.server\";\r\n\r\nexport default function $bookid() {\r\n  const bookData = useLoaderData();\r\n  console.log(\"bookData - $\", bookData);\r\n  const params = useParams();\r\n\r\n  return (\r\n    <>\r\n      <h1 className=\"text-xl\">Book Id Dynamic route</h1>\r\n      <div>{params.bookid}</div>\r\n      <div>TEST{bookData.title}</div>\r\n      <div>{bookData.author}</div>\r\n      <div>{bookData.releaseYear}</div>\r\n    </>\r\n  );\r\n}\r\n\r\nexport function loader({ params }) {\r\n  return getBookById(params.bookid);\r\n}\r\n"],
+  "mappings": ";;;;;;;;;;;;;AACA,0BAA4B;AAQxB;AANW,SAAR,UAA2B;AAChC,QAAM,WAAW,cAAc;AAC/B,UAAQ,IAAI,gBAAgB,QAAQ;AACpC,QAAM,SAAS,UAAU;AAEzB,SACE,sFACE;AAAA,uDAAC,QAAG,WAAU,WAAU,qCAAxB;AAAA;AAAA;AAAA;AAAA,WAA6C;AAAA,IAC7C,mDAAC,SAAK,iBAAO,UAAb;AAAA;AAAA;AAAA;AAAA,WAAoB;AAAA,IACpB,mDAAC,SAAI;AAAA;AAAA,MAAK,SAAS;AAAA,SAAnB;AAAA;AAAA;AAAA;AAAA,WAAyB;AAAA,IACzB,mDAAC,SAAK,mBAAS,UAAf;AAAA;AAAA;AAAA;AAAA,WAAsB;AAAA,IACtB,mDAAC,SAAK,mBAAS,eAAf;AAAA;AAAA;AAAA;AAAA,WAA2B;AAAA,OAL7B;AAAA;AAAA;AAAA;AAAA,SAMA;AAEJ;",
+  "names": []
+}

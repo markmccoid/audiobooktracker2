@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  email     String      @unique
+  password  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  userBooks UserBooks[]
+
+  userSettings UserSettings?
+}
+
+model UserSettings {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  pageSize Int    @default(25)
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String @unique @db.ObjectId
+}
+
+model UserBooks {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  book       Books    @relation(fields: [booksId], references: [id])
+  booksId    String   @db.ObjectId
+  rating     Int?
+  listenedTo Boolean?
+  favorite   Boolean?
+  comments   String?
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @db.ObjectId
+  updatedAt  DateTime @updatedAt
+
+  @@unique([booksId, userId])
+}
+
+model Books {
+  id                String      @id @default(auto()) @map("_id") @db.ObjectId
+  source            String // 'audible' or 'dropbox'
+  dropboxLocation   String?
+  title             String
+  author            String
+  description       String
+  narratedBy        String?
+  publishedYear     Int
+  releaseDate       DateTime?
+  pageCount         Int?
+  bookLengthText    String?
+  bookLengthMinutes Float?
+  imageURL          String?
+  primaryCategory   String
+  secondaryCategory String
+  asin              String?
+  genres            String[]
+  userBooks         UserBooks[]
+}
