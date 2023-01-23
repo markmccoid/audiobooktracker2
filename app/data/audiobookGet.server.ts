@@ -41,8 +41,8 @@ type BookFilter = {
   favoriteFlag?: string | undefined;
   listenedToFlag?: string | undefined;
 };
-export type SortFields = "publishedYear" | "author" | "title";
-export type SortDirections = "asc" | "desc";
+type SortFields = "publishedYear" | "author" | "title";
+type SortDirections = "asc" | "desc";
 type SortOptions = {
   sortField: SortFields;
   sortDirection: SortDirections;

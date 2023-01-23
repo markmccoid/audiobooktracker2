@@ -50,6 +50,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
     throw new Error(String(error));
   }
+  return null;
 };
 
 //-------------------------------------------------

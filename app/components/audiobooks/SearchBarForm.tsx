@@ -20,7 +20,51 @@ type Props = {
   categories: Categories;
   totalBooks: number;
 };
-function SearchBarForm({ categories, totalBooks }: Props) {
+
+//-------------------------------------------
+//-- Temporary categories mappings
+//-------------------------------------------
+const primaryCategories = ["Biographies", "Fiction", "Language", "NonFiction"];
+const secondaryCategories = [
+  "Celebrity",
+  "Historical",
+  "Science",
+  "Action Suspense",
+  "Fantasy",
+  "General Fiction",
+  "Horror",
+  "SciFi",
+  "Business Wealth",
+  "Education",
+  "Health Wellness",
+  "Productivity",
+  "Self Help",
+  "Spirituality",
+  "Success Motivation",
+  "Technology",
+  "TTC",
+];
+const categoryMap = {
+  Biographies: ["Celebrity", "Historical", "Science"],
+  Fiction: ["Action Suspense", "Fantasy", "General Fiction", "Horror", "SciFi"],
+  Language: [],
+  NonFiction: [
+    "Business Wealth",
+    "Education",
+    "Health Wellness",
+    "Productivity",
+    "Science",
+    "Self Help",
+    "Spirituality",
+    "Success Motivation",
+    "Technology",
+    "TTC",
+  ],
+};
+//~ --------------------------------------------------------
+//~ SearchBarForm Component ------
+//~ --------------------------------------------------------
+function SearchBarForm({ totalBooks }: Props) {
   const [params, setParams] = useSearchParams();
   const [secondCats, setSecondCats] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -66,9 +110,9 @@ function SearchBarForm({ categories, totalBooks }: Props) {
 
   const secondCatsFunc = () => {
     if (catRef.current?.value) {
-      setSecondCats(["", ...categories.categoryMap[catRef.current?.value]]);
+      setSecondCats(["", ...categoryMap[catRef.current?.value]]);
     } else {
-      setSecondCats(["", ...categories.secondaryCategories]);
+      setSecondCats(["", ...secondaryCategories]);
     }
 
     if (newParams.secondarycat && subCatRef.current) {
@@ -122,6 +166,9 @@ function SearchBarForm({ categories, totalBooks }: Props) {
 
   return (
     <div className="flex w-full  bg-cerulean-blue-400 p-4 mb-5" id="form">
+      <button className="button" onClick={() => alert("Here")}>
+        Upload Categories
+      </button>
       <Form
         ref={formRef}
         onChange={(e) => db_handleChange(e.currentTarget)}
@@ -156,7 +203,7 @@ function SearchBarForm({ categories, totalBooks }: Props) {
               className="select-box w-36"
             >
               <option key="empty" value=""></option>
-              {categories.primaryCategories?.map((cat) => (
+              {primaryCategories?.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
@@ -181,7 +228,7 @@ function SearchBarForm({ categories, totalBooks }: Props) {
             </select>
           </div>
           {/* FAVORITES */}
-          <input
+          {/* <input
             type="hidden"
             id="favorited"
             name="favorited"
@@ -211,7 +258,7 @@ function SearchBarForm({ categories, totalBooks }: Props) {
             ) : (
               <AiOutlineHeart size={35} />
             )}
-          </div>
+          </div> */}
           {/* <input
             type="hidden"
             id="favorited"
@@ -264,6 +311,25 @@ function SearchBarForm({ categories, totalBooks }: Props) {
             )}
           </div> */}
           {/* FAVORITES END -------------------------*/}
+
+          <div
+            onClick={() => {
+              setFavoriteState((prev) => !prev);
+            }}
+          >
+            <input
+              type="hidden"
+              name="favorited"
+              id="favorited"
+              value={favoriteState.toString()}
+            />
+            {favoriteState ? (
+              <AiFillHeart size={35} color="red" />
+            ) : (
+              <AiOutlineHeart size={35} />
+            )}
+          </div>
+
           <div
             onClick={() => {
               setIsListenedTo((prev) => !prev);

@@ -1,13 +1,14 @@
+import { UserBooks } from "@prisma/client";
+
 export type Book = {
-  id: string;
+  id?: string;
   asin?: string;
-  fullPath?: string;
+  dropboxLocation?: string;
   source: "audible" | "dropbox";
   audioFileCount?: number;
   title: string;
   description: string;
   author: string;
-  authors?: string[];
   narratedBy?: string;
   publishedYear: number;
   releaseDate?: Date;
@@ -17,7 +18,6 @@ export type Book = {
   bookLengthText?: string;
   bookLengthMinutes?: number;
   genres: string[];
-  pathDirArray?: string[];
   primaryCategory: string;
   secondaryCategory: string;
   comments?: string | undefined | null;
@@ -26,9 +26,7 @@ export type Book = {
   listenedToDate?: Date;
   favorite?: boolean | undefined | null;
 };
-
-export type AudibleBook = Omit<Book, "pathDirArray">;
-export type DropboxBook = Omit<Book, "asin">;
+export type QueryBookwUserBook = Book & { userBooks?: UserBooks[] };
 
 // Must conform to the prisma schema for UserBooks
 export type UserBookData = {
@@ -38,50 +36,49 @@ export type UserBookData = {
   listenedTo?: boolean;
 };
 
+//~ --------------------------------------------
+//~ Types for Filtered Pulls
+//~ --------------------------------------------
+export type BookFilter = {
+  primaryCategory?: string;
+  secondaryCategory?: string;
+  author?: string;
+  title?: string;
+  favoriteFlag?: boolean | undefined;
+  listenedToFlag?: boolean | undefined;
+};
+export type SortFields = "publishedYear" | "author" | "title";
+export type SortDirections = "asc" | "desc";
+export type SortOptions = {
+  sortField: SortFields;
+  sortDirection: SortDirections;
+};
+export type Pagination = {
+  pageSize?: number;
+  offset?: number;
+};
+
+export type PaginationOut = {
+  prevOffset: number;
+  nextOffset: number;
+  prevAvailable: boolean;
+  nextAvailable: boolean;
+  totalPages: number;
+  currentPage: number;
+  totalBooks: number;
+};
+
+//~ --------------------------------------------
+//~ Other Book Types
+//~ --------------------------------------------
+
+export type AudibleBook = Omit<Book, "dropboxLocation">;
+export type DropboxBook = Omit<Book, "asin">;
+
 export type BookMetadata = {
   authors: string[];
   primaryCategories: string[];
   secondaryCategories: string[];
   categories: string[];
   categoryMap: Record<string, string[]>;
-};
-
-export type AudibleJSON = {
-  id: string;
-  fullPath: string;
-  audioFileCount?: number;
-  title: string;
-  author: string;
-  narratedBy?: string;
-  publishedYear?: number;
-  releaseDate?: string;
-  publisher?: string;
-  pageCount?: number;
-  bookLength?: string;
-  categories: string[];
-  pathPrimaryCat: string;
-  pathSecondaryCat: string;
-  description?: string | undefined;
-  imageURL?: string;
-  asin?: string;
-};
-
-export type DropboxJSON = {
-  id: string;
-  fullPath: string;
-  audioFileCount?: number;
-  title: string;
-  author: string;
-  narratedBy?: string;
-  publishedYear?: number;
-  releaseDate?: string;
-  publisher?: string;
-  pageCount?: number;
-  bookLength?: string;
-  categories: string[];
-  pathDirArray: string[];
-  pathPrimaryCat: string;
-  pathSecondaryCat?: string;
-  description?: string;
-  imageURL?: string;
 };

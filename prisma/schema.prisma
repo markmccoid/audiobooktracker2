@@ -30,7 +30,7 @@ model UserSettings {
 
 model UserBooks {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  book       Books    @relation(fields: [booksId], references: [id])
+  books      Books    @relation(fields: [booksId], references: [id])
   booksId    String   @db.ObjectId
   rating     Int?
   listenedTo Boolean?

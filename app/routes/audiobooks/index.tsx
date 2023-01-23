@@ -28,7 +28,11 @@ import SearchBarForm from "~/components/audiobooks/SearchBarForm";
 import { getUserFromSession } from "~/data/session.sever";
 import { getUserBooks, updateUserBooks } from "~/data/prismaQueries.server";
 import BookPagination from "~/components/audiobooks/BookPagination";
-import { getAllAudiobooksDB, updateUserBooksDB } from "~/data/bookDBQueries";
+import {
+  filterBooksDB,
+  getAllAudiobooksDB,
+  updateUserBooksDB,
+} from "~/data/bookDBQueries";
 
 //--------------------------------------------------
 //-- LOADER
@@ -45,11 +49,14 @@ export const loader: LoaderFunction = async ({ request }) => {
     url.searchParams.get("sortdirection") ? "desc" : "asc"
   ) as SortDirections;
 
+  console.log("FAV, LIS", favoriteFlag, listenedToFlag);
   const filter = {
     title: url.searchParams.get("title") as string | undefined,
     author: url.searchParams.get("author") as string | undefined,
-    primaryCat: url.searchParams.get("primarycat") as string | undefined,
-    secondaryCat: url.searchParams.get("secondarycat") as string | undefined,
+    primaryCategory: url.searchParams.get("primarycat") as string | undefined,
+    secondaryCategory: url.searchParams.get("secondarycat") as
+      | string
+      | undefined,
     favoriteFlag: favoriteFlag as string | undefined,
     listenedToFlag: listenedToFlag as string | undefined,
   };
@@ -60,8 +67,9 @@ export const loader: LoaderFunction = async ({ request }) => {
     sortField: url.searchParams.get("sortfield") as SortFields,
     sortDirection,
   };
-  const books = await getAllAudiobooksDB(userId);
-  console.log("loaderfunc", books.length);
+  // const books = await getAllAudiobooksDB(userId);
+  const books = await filterBooksDB(userId, filter, sort, pagination);
+  // console.log("loaderfunc", books.length);
   return { books };
   // const { books, paginationOut } = await filterBooks(
   //   userId,
@@ -151,11 +159,18 @@ export default function Index() {
     // totalBooks,
   } = useLoaderData() as LoaderData;
   // const categoriesProp = useMemo<Categories>(() => categories, []);
-  console.log("book index", books.length);
+  // console.log("book index", books.length);
 
   return (
     <div>
-      HERE
+      <SearchBarForm
+        categories={{
+          primaryCategories: ["Fiction", "Non Fiction"],
+          secondaryCategories: ["Second"],
+          categoryMap: { Fiction: ["Second"], ["Non Fiction"]: [] },
+        }}
+        totalBooks={books.length}
+      />
       <div className="flex flex-wrap m-2 justify-center border border-red-900 ">
         {books?.map((book) => (
           <BookCard key={book.id} book={book} />
