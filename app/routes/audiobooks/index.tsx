@@ -1,20 +1,5 @@
-import {
-  useLoaderData,
-  Link,
-  useMatches,
-  useSearchParams,
-  useParams,
-  useTransition,
-  useNavigate,
-} from "@remix-run/react";
-import {
-  Categories,
-  filterBooks,
-  getAllAudiobooks,
-  getCategories,
-  SortDirections,
-  SortFields,
-} from "~/data/audiobookGet.server";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { getCategories } from "~/data/audiobookGet.server";
 import {
   LoaderFunction,
   json,
@@ -22,18 +7,27 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Book } from "~/types/bookTypes";
-import { useEffect, useMemo, useRef, useState } from "react";
+
 import BookCard from "~/components/audiobooks/BookCard";
 import SearchBarForm from "~/components/audiobooks/SearchBarForm";
 import { getUserFromSession } from "~/data/session.sever";
-import { getUserBooks, updateUserBooks } from "~/data/prismaQueries.server";
-import BookPagination from "~/components/audiobooks/BookPagination";
-import {
-  filterBooksDB,
-  getAllAudiobooksDB,
-  updateUserBooksDB,
-} from "~/data/bookDBQueries";
 
+import BookPagination from "~/components/audiobooks/BookPagination";
+import { filterBooksDB, updateUserBooksDB } from "~/data/bookDBQueries";
+import { SortDirections, SortFields } from "../../types/bookTypes";
+import { zfd } from "zod-form-data";
+import { z } from "zod";
+import { isEmpty, parseBooleanFromString } from "~/utils/helpers";
+
+const loaderSchema = z.object({
+  author: z.string(),
+  title: z.string(),
+  primaryCategory: z.string(),
+  secondaryCategory: z.string(),
+  favoriteFlag: z.string(),
+  listenedToFlag: z.string(),
+  offest: z.number(),
+});
 //--------------------------------------------------
 //-- LOADER
 //--------------------------------------------------
@@ -41,15 +35,19 @@ export const loader: LoaderFunction = async ({ request }) => {
   const categories = getCategories();
   const userId = await getUserFromSession(request);
   console.log("in Loader Function", userId);
-  //console.log("User Books client", JSON.stringify(userBooks));
+
   const url = new URL(request.url);
-  const favoriteFlag = url.searchParams.get("favorited");
-  const listenedToFlag = url.searchParams.get("listenedToFlag");
+
+  const favoriteFlag = parseBooleanFromString(
+    url.searchParams.get("favorited")
+  );
+  const listenedToFlag = parseBooleanFromString(
+    url.searchParams.get("listenedToFlag")
+  );
   const sortDirection = (
     url.searchParams.get("sortdirection") ? "desc" : "asc"
   ) as SortDirections;
 
-  console.log("FAV, LIS", favoriteFlag, listenedToFlag);
   const filter = {
     title: url.searchParams.get("title") as string | undefined,
     author: url.searchParams.get("author") as string | undefined,
@@ -57,8 +55,9 @@ export const loader: LoaderFunction = async ({ request }) => {
     secondaryCategory: url.searchParams.get("secondarycat") as
       | string
       | undefined,
-    favoriteFlag: favoriteFlag as string | undefined,
-    listenedToFlag: listenedToFlag as string | undefined,
+    source: url.searchParams.get("source") as string | undefined,
+    favoriteFlag: favoriteFlag,
+    listenedToFlag: listenedToFlag,
   };
   const pagination = {
     offset: parseInt(url.searchParams.get("offset")),
@@ -67,34 +66,33 @@ export const loader: LoaderFunction = async ({ request }) => {
     sortField: url.searchParams.get("sortfield") as SortFields,
     sortDirection,
   };
-  // const books = await getAllAudiobooksDB(userId);
-  const books = await filterBooksDB(userId, filter, sort, pagination);
-  // console.log("loaderfunc", books.length);
-  return { books };
-  // const { books, paginationOut } = await filterBooks(
-  //   userId,
-  //   filter,
-  //   sort,
-  //   pagination
-  // );
-  // // build the Next and Prev URLs to send to a Link component
-  // url.searchParams.set("offset", paginationOut.nextOffset.toString());
-  // const nextURL = paginationOut.nextAvailable
-  //   ? `${url.pathname}${url.search}`
-  //   : undefined;
-  // url.searchParams.set("offset", paginationOut.prevOffset.toString());
-  // const prevURL = paginationOut.prevAvailable
-  //   ? `${url.pathname}${url.search}`
-  //   : undefined;
-  // return {
-  //   categories,
-  //   books,
-  //   nextURL,
-  //   prevURL,
-  //   currentPage: paginationOut.currentPage,
-  //   totalPages: paginationOut.totalPages,
-  //   totalBooks: paginationOut.totalBooks,
-  // };
+
+  const { slicedBooks, paginationOut } = await filterBooksDB(
+    userId,
+    filter,
+    sort,
+    pagination
+  );
+  // build the Next and Prev URLs to send to a Link component
+  // NOTE: we are setting the searchParams only so that we extract the new
+  //    path with the new offest in the url.search
+  url.searchParams.set("offset", paginationOut.nextOffset.toString());
+  const nextURL = paginationOut.nextAvailable
+    ? `${url.pathname}${url.search}`
+    : undefined;
+  url.searchParams.set("offset", paginationOut.prevOffset.toString());
+  const prevURL = paginationOut.prevAvailable
+    ? `${url.pathname}${url.search}`
+    : undefined;
+  return {
+    categories,
+    books: slicedBooks,
+    nextURL,
+    prevURL,
+    currentPage: paginationOut.currentPage,
+    totalPages: paginationOut.totalPages,
+    totalBooks: paginationOut.totalBooks,
+  };
 };
 
 //--------------------------------------------------
@@ -120,13 +118,18 @@ export const action: ActionFunction = async ({ request }) => {
       favorite: values.favorite === "true" ? false : true,
     });
   }
-  // console.log("isFavorite", formData.get("favorite"));
+
   if (_action === "toggle-listenedto") {
     // console.log("Values in Action", values);
     // console.log("in Action", bookId, values.listenedto);
     // we are expecting old value and will toggle to new
     return await updateUserBooksDB(userId, bookId, {
       listenedTo: values.listenedto === "true" ? false : true,
+    });
+  }
+  if (_action === "rating") {
+    return await updateUserBooksDB(userId, bookId, {
+      rating: +values?.rating,
     });
   }
   return null;
@@ -150,47 +153,27 @@ export default function Index() {
   // const transition = useTransition();
   const navigate = useNavigate();
   const {
-    // categories,
+    categories,
     books,
-    // nextURL,
-    // prevURL,
-    // totalPages,
-    // currentPage,
-    // totalBooks,
+    nextURL,
+    prevURL,
+    totalPages,
+    currentPage,
+    totalBooks,
   } = useLoaderData() as LoaderData;
   // const categoriesProp = useMemo<Categories>(() => categories, []);
   // console.log("book index", books.length);
 
-  return (
-    <div>
-      <SearchBarForm
-        categories={{
-          primaryCategories: ["Fiction", "Non Fiction"],
-          secondaryCategories: ["Second"],
-          categoryMap: { Fiction: ["Second"], ["Non Fiction"]: [] },
-        }}
-        totalBooks={books.length}
-      />
-      <div className="flex flex-wrap m-2 justify-center border border-red-900 ">
-        {books?.map((book) => (
-          <BookCard key={book.id} book={book} />
-        ))}
-      </div>
-    </div>
-  );
   // return (
-  //   <div className="flex flex-col">
-  //     {/* <SearchBar bookLimit={bookLimit} setBookLimit={setBookLimit} /> */}
-  //     <SearchBarForm categories={categoriesProp} totalBooks={totalBooks} />
-
-  //     <div className="flex justify-center mr-14">
-  //       <BookPagination
-  //         nextURL={nextURL}
-  //         prevURL={prevURL}
-  //         totalPages={totalPages}
-  //         currentPage={currentPage}
-  //       />
-  //     </div>
+  //   <div>
+  //     <SearchBarForm
+  //       categories={{
+  //         primaryCategories: ["Fiction", "Non Fiction"],
+  //         secondaryCategories: ["Second"],
+  //         categoryMap: { Fiction: ["Second"], ["Non Fiction"]: [] },
+  //       }}
+  //       totalBooks={books.length}
+  //     />
   //     <div className="flex flex-wrap m-2 justify-center border border-red-900 ">
   //       {books?.map((book) => (
   //         <BookCard key={book.id} book={book} />
@@ -198,6 +181,26 @@ export default function Index() {
   //     </div>
   //   </div>
   // );
+  return (
+    <div className="flex flex-col">
+      {/* <SearchBar bookLimit={bookLimit} setBookLimit={setBookLimit} /> */}
+      <SearchBarForm totalBooks={totalBooks} />
+
+      <div className="flex justify-center mr-14">
+        <BookPagination
+          nextURL={nextURL}
+          prevURL={prevURL}
+          totalPages={totalPages}
+          currentPage={currentPage}
+        />
+      </div>
+      <div className="flex flex-wrap m-2 justify-center border border-red-900 ">
+        {books?.map((book) => (
+          <BookCard key={book.id} book={book} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // export const loader: LoaderFunction = async () => {

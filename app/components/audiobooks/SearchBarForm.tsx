@@ -85,6 +85,7 @@ function SearchBarForm({ totalBooks }: Props) {
       author: params.get("author") || undefined,
       primarycat: params.get("primarycat") || undefined,
       secondarycat: params.get("secondarycat") || undefined,
+      source: params.get("source") || undefined,
       sortfield: params.get("sortfield") || undefined,
       sortdirection: params.get("sortdirection") || undefined,
       favorited: params.get("favorited") || undefined,
@@ -166,9 +167,6 @@ function SearchBarForm({ totalBooks }: Props) {
 
   return (
     <div className="flex w-full  bg-cerulean-blue-400 p-4 mb-5" id="form">
-      <button className="button" onClick={() => alert("Here")}>
-        Upload Categories
-      </button>
       <Form
         ref={formRef}
         onChange={(e) => db_handleChange(e.currentTarget)}
@@ -227,68 +225,28 @@ function SearchBarForm({ totalBooks }: Props) {
               ))}
             </select>
           </div>
+          {/* Audible/Dropbox or Both */}
+          <div className="flex flex-col ">
+            <label htmlFor="secondarycat" className="search-form-input-label">
+              Source
+            </label>
+            <select
+              name="source"
+              // ref={subCatRef}
+              defaultValue={newParams.source}
+              className="select-box w-32"
+            >
+              <option key="both" value=""></option>
+              <option key="audible" value="audible">
+                Audible Only
+              </option>
+              <option key="dropbox" value="dropbox">
+                Dropbox Only
+              </option>
+            </select>
+          </div>
+
           {/* FAVORITES */}
-          {/* <input
-            type="hidden"
-            id="favorited"
-            name="favorited"
-            value={newParams.favorited}
-          />
-          <div
-            onClick={() =>
-              setParams((prev) => {
-                const dupsRemoved = Object.keys(newParams).reduce(
-                  (final, currKey) => {
-                    if (newParams[currKey]) {
-                      final = { ...final, [currKey]: newParams[currKey] };
-                    }
-                    return final;
-                  },
-                  {}
-                );
-                return {
-                  ...dupsRemoved,
-                  favorited: newParams?.favorited === "true" ? "false" : "true",
-                };
-              })
-            }
-          >
-            {newParams.favorited === "true" ? (
-              <AiFillHeart size={35} color={"red"} />
-            ) : (
-              <AiOutlineHeart size={35} />
-            )}
-          </div> */}
-          {/* <input
-            type="hidden"
-            id="favorited"
-            name="favorited"
-            value={newParams?.favorited === "true" ? "false" : "true"}
-          /> */}
-          {/* <input type="text" value={favoriteState ? "false" : "true"} />
-          <button
-            type="submit"
-            aria-label="toggle favorite"
-            name="favorited"
-            onClick={() => {
-              setFavoriteState((prev) => {
-                console.log("in Set State");
-                return !prev;
-              });
-              console.log("button click", favoriteState, params.get("favorited"));
-            }}
-            // value={params.get("favorited") === "true" ? "false" : "true"}
-            value={favoriteState ? "false" : "true"}
-          >
-            {(params.get("favorited") === "true" &&
-              transition.state !== "submitting") ||
-            (params.get("favorited") !== "true" &&
-              transition.state == "submitting") ? (
-              <AiFillHeart size={35} color={"red"} />
-            ) : (
-              <AiOutlineHeart size={35} />
-            )}
-          </button> */}
           {/* FAVORITES WORKING START -------------------------*/}
           {/* <div
             onClick={() => {

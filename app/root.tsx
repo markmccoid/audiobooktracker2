@@ -20,6 +20,7 @@ import {
 } from "@remix-run/react";
 import { getAllAudiobooks, initialBookLoad } from "./data/audiobookGet.server";
 import styles from "./styles/app.css";
+import ratingStyles from "@smastrom/react-rating/style.css";
 
 export const meta: MetaFunction = () => ({
   charset: "utf-8",
@@ -60,6 +61,10 @@ export const links: LinksFunction = () => {
     {
       rel: "stylesheet",
       href: styles,
+    },
+    {
+      rel: "stylesheet",
+      href: ratingStyles,
     },
   ];
 };

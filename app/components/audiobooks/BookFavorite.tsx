@@ -28,7 +28,7 @@ function BookFavorite({ book }: Props) {
         {favoriteFlag ? (
           <AiFillHeart size={35} color={"red"} />
         ) : (
-          <AiOutlineHeart size={35} />
+          <AiOutlineHeart size={35} color={"black"} />
         )}
       </button>
     </fetcher.Form>

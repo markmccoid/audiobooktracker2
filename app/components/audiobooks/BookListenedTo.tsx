@@ -30,7 +30,7 @@ function BookListenedTo({ book }: Props) {
         {optimisticValue ? (
           <BsEarbuds size={35} color="green" />
         ) : (
-          <BsEarbuds size={35} />
+          <BsEarbuds size={35} color={"black"} />
         )}
       </button>
     </fetcher.Form>
