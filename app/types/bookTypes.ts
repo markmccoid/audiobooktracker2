@@ -49,9 +49,11 @@ export type BookFilter = {
 };
 export type SortFields = "publishedYear" | "author" | "title";
 export type SortDirections = "asc" | "desc";
+export type RatingSort = "asc" | "desc" | "off" | null | undefined;
 export type SortOptions = {
   sortField: SortFields;
   sortDirection: SortDirections;
+  ratingSortDirection: RatingSort;
 };
 export type Pagination = {
   pageSize?: number;

@@ -5,7 +5,7 @@ import {
   useSearchParams,
   useTransition,
 } from "@remix-run/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Categories } from "~/data/audiobookGet.server";
 import _ from "lodash";
 import {
@@ -44,7 +44,7 @@ const secondaryCategories = [
   "Technology",
   "TTC",
 ];
-const categoryMap = {
+const categoryMap: Record<string, string[]> = {
   Biographies: ["Celebrity", "Historical", "Science"],
   Fiction: ["Action Suspense", "Fantasy", "General Fiction", "Horror", "SciFi"],
   Language: [],
@@ -61,6 +61,24 @@ const categoryMap = {
     "TTC",
   ],
 };
+
+const ratingReducer = (
+  state: "asc" | "desc" | "off",
+  action: { type: "asc" | "desc" | "off" }
+) => {
+  switch (action.type) {
+    case "asc":
+      state = "desc";
+      break;
+    case "desc":
+      state = "off";
+      break;
+    default:
+      state = "asc";
+      break;
+  }
+  return state;
+};
 //~ --------------------------------------------------------
 //~ SearchBarForm Component ------
 //~ --------------------------------------------------------
@@ -69,6 +87,7 @@ function SearchBarForm({ totalBooks }: Props) {
   const [secondCats, setSecondCats] = useState<string[]>([]);
   const navigate = useNavigate();
   const submit = useSubmit();
+  const [ratingSortState, toggleRSState] = useReducer(ratingReducer, "off");
   // Form Refs
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +106,7 @@ function SearchBarForm({ totalBooks }: Props) {
       secondarycat: params.get("secondarycat") || undefined,
       source: params.get("source") || undefined,
       sortfield: params.get("sortfield") || undefined,
-      sortdirection: params.get("sortdirection") || undefined,
+      sortDirection: params.get("sortdirection") || undefined,
       favorited: params.get("favorited") || undefined,
       listenedToFlag: params.get("listenedToFlag") || undefined,
     }),
@@ -99,7 +118,7 @@ function SearchBarForm({ totalBooks }: Props) {
     if (formRef?.current) {
       handleChange(formRef.current);
     }
-  }, [isListenedTo, favoriteState]);
+  }, [isListenedTo, favoriteState, ratingSortState]);
 
   // Whenever params change, we need to deal with the
   // secondary categories.  First populating them with the appropriate
@@ -132,21 +151,6 @@ function SearchBarForm({ totalBooks }: Props) {
     // navigate("/");
   };
 
-  const clearInputField = (inputName: string) => {
-    if (inputRef.current) {
-      inputRef.current?.focus();
-      inputRef.current.value = "";
-      handleChange(formRef.current);
-    }
-  };
-  const clearInputFieldTest = (inputName: string) => {
-    if (testRef.current) {
-      testRef.current?.focus();
-      testRef.current.value = "";
-      handleChange(formRef.current);
-    }
-  };
-
   const submitForm = () => {
     if (formRef.current) {
       handleChange(formRef.current);
@@ -162,7 +166,7 @@ function SearchBarForm({ totalBooks }: Props) {
   function handleChange(targetForm: HTMLFormElement) {
     submit(targetForm, { replace: true });
   }
-  const db_handleChange = _.debounce((e) => handleChange(e), 300);
+  const db_handleChange = _.debounce((e) => handleChange(e), 400);
   //~ ----------------------------------
 
   return (
@@ -173,22 +177,7 @@ function SearchBarForm({ totalBooks }: Props) {
         className="flex items-center justify-between  flex-grow"
       >
         <div className="flex items-center space-x-2">
-          <SearchInput
-            // ref={testRef}
-            defaultValue={newParams.title}
-            submitForm={submitForm}
-            label="Title"
-            name="title"
-          />
-
-          <SearchInput
-            // ref={testRef}
-            defaultValue={newParams.author}
-            submitForm={submitForm}
-            label="Author"
-            name="author"
-          />
-
+          {/* Primary Category */}
           <div className="flex flex-col">
             <label htmlFor="primarycat" className="search-form-input-label">
               Primary Cat
@@ -208,6 +197,7 @@ function SearchBarForm({ totalBooks }: Props) {
               ))}
             </select>
           </div>
+          {/* Secondary Category */}
           <div className="flex flex-col">
             <label htmlFor="secondarycat" className="search-form-input-label">
               Secondary Cat
@@ -225,6 +215,22 @@ function SearchBarForm({ totalBooks }: Props) {
               ))}
             </select>
           </div>
+          {/* Title */}
+          <SearchInput
+            // ref={testRef}
+            defaultValue={newParams.title}
+            submitForm={submitForm}
+            label="Title"
+            name="title"
+          />
+          {/* Author */}
+          <SearchInput
+            // ref={testRef}
+            defaultValue={newParams.author}
+            submitForm={submitForm}
+            label="Author"
+            name="author"
+          />
           {/* Audible/Dropbox or Both */}
           <div className="flex flex-col ">
             <label htmlFor="secondarycat" className="search-form-input-label">
@@ -269,7 +275,7 @@ function SearchBarForm({ totalBooks }: Props) {
             )}
           </div> */}
           {/* FAVORITES END -------------------------*/}
-
+          {/* Favorite Flag */}
           <div
             onClick={() => {
               setFavoriteState((prev) => !prev);
@@ -287,7 +293,7 @@ function SearchBarForm({ totalBooks }: Props) {
               <AiOutlineHeart size={35} />
             )}
           </div>
-
+          {/* ListenedTo Flag */}
           <div
             onClick={() => {
               setIsListenedTo((prev) => !prev);
@@ -305,30 +311,59 @@ function SearchBarForm({ totalBooks }: Props) {
               <BsEarbuds size={35} />
             )}
           </div>
-          <button
-            type="submit"
-            className="bg-cerulean-blue-500 text-white text-xl px-4 py-1 border border-cerulean-blue-900 rounded-lg
-            hover:bg-cerulean-blue-400 transition-all"
-          >
-            Filter
-          </button>
-          <button
+          {/* Clear Button */}
+          {/* <button
             onClick={clearSearchParams}
             className="bg-cerulean-blue-500 text-white text-xl px-4 py-1 border border-cerulean-blue-900 rounded-lg
             hover:bg-cerulean-blue-400 transition-all"
           >
             Clear
-          </button>
+          </button> */}
         </div>
         <div className="flex flex-col items-center border border-gray-800 bg-cerulean-blue-300 rounded-md px-2">
           <div className="text-xl">Books</div>
           <div className="text-xl">{totalBooks}</div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex  space-x-4 mr-4 ">
+          {/* Rating Sort */}
+          <div className="flex flex-col justify-around ">
+            <input
+              type="hidden"
+              name="ratingsort"
+              id="ratingsort"
+              value={ratingSortState}
+            />
+            <div className="search-form-input-label ml-0">Rating Sort</div>
+            <div
+              className="cursor-pointer px-2 py-1 text-white text-center self-center w-14 border border-black bg-cerulean-blue-500 rounded-md hover:bg-cerulean-blue-400"
+              onClick={() => toggleRSState({ type: ratingSortState })}
+            >
+              {`${ratingSortState[0].toUpperCase()}${ratingSortState.slice(1)}`}
+            </div>
+          </div>
+          {/* Rating Sort END */}
+
           <div className="flex flex-col">
-            <label htmlFor="sortfield" className="search-form-input-label">
-              Sort By
-            </label>
+            <div className="flex justify-between">
+              <label
+                htmlFor="sortfield"
+                className="search-form-input-label self-center"
+              >
+                Sort By
+              </label>
+              <input
+                className="hidden"
+                type="checkbox"
+                id="sortdirection"
+                name="sortdirection"
+              />
+              <label
+                htmlFor="sortdirection"
+                className="cursor-pointer px-2 py-1 text-white border border-black bg-cerulean-blue-500 rounded-md hover:bg-cerulean-blue-400"
+              >
+                {newParams.sortDirection === "on" ? "Desc" : "Asc"}
+              </label>
+            </div>
             <select
               name="sortfield"
               defaultValue="author"
@@ -338,19 +373,7 @@ function SearchBarForm({ totalBooks }: Props) {
               <option value="title">Title</option>
               <option value="publishedYear">Published Year</option>
             </select>
-            <input
-              className="hidden"
-              type="checkbox"
-              id="sortdirection"
-              name="sortdirection"
-            />
           </div>
-          <label
-            htmlFor="sortdirection"
-            className="mt-4 px-2 py-1 text-white border border-black bg-cerulean-blue-500 rounded-md hover:bg-cerulean-blue-400"
-          >
-            {newParams.sortDirection === "on" ? "desc" : "asc"}
-          </label>
         </div>
       </Form>
     </div>

@@ -117,6 +117,7 @@ export const filterBooksDB = async (
   sort: SortOptions,
   pagination: Pagination
 ) => {
+  console.log("SORT OPTS", sort);
   const pageSize = pagination?.pageSize || 15;
   const offset = pagination?.offset || 0;
 
@@ -147,12 +148,23 @@ export const filterBooksDB = async (
   // Merge and filter on UserBooks filters
   let books = mergeAndFilterBooks(dbBooks, whereStatements.userBooksFilter);
 
-  //! to be implemented ->  Check for a sorting flag for rating -> undefined | "asc" | "desc"
-  //! if (ratingSort === "asc") {
-  //!   books =_.sortBy(books, [(el) => el.rating || 0]);
-  //! } else if (ratingSort === "desc") {
-  //!   books = _.reverse(_.sortBy(books, [(el) => el.rating || 0]));
-  //! }
+  //-- Helper function for rate sorting
+  function reverseRating(ratingIn: number): number {
+    if (ratingIn === 0) return 11;
+    return Math.abs(ratingIn - 11);
+  }
+
+  // Check for a rating sorting flag  -> "off" | "asc" | "desc"
+  if (sort.ratingSortDirection === "asc") {
+    books = _.sortBy(books, [(el) => el.rating || 0]);
+  } else if (sort.ratingSortDirection === "desc") {
+    // Would normally reverse the the sort from above, but we are sorting
+    // the rating independent of the other sort.  So while reversing would
+    // sort the ratings properly, the titles would be sorted opposite of what
+    // was chose.
+    // Instead I just flip the rating so that 10 = 1, 9 = 2, etc.
+    books = _.sortBy(books, [(el) => reverseRating(el.rating || 0)]);
+  }
 
   const paginationOut = calculateOffsets(offset, pageSize, books.length);
   paginationOut.totalPages = Math.ceil(books.length / pageSize);
@@ -160,12 +172,12 @@ export const filterBooksDB = async (
   paginationOut.totalBooks = books.length;
 
   const slicedBooks = books.slice(offset, offset + pageSize);
-  console.log(
-    "Prev and Next Offset",
-    paginationOut.prevOffset,
-    paginationOut.nextOffset,
-    slicedBooks.length
-  );
+  // console.log(
+  //   "Prev and Next Offset",
+  //   paginationOut.prevOffset,
+  //   paginationOut.nextOffset,
+  //   slicedBooks.length
+  // );
 
   return { slicedBooks, paginationOut };
 };

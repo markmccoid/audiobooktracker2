@@ -6,7 +6,7 @@ import {
   ActionFunction,
   redirect,
 } from "@remix-run/node";
-import { Book } from "~/types/bookTypes";
+import { Book, RatingSort } from "~/types/bookTypes";
 
 import BookCard from "~/components/audiobooks/BookCard";
 import SearchBarForm from "~/components/audiobooks/SearchBarForm";
@@ -65,6 +65,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const sort = {
     sortField: url.searchParams.get("sortfield") as SortFields,
     sortDirection,
+    ratingSortDirection: url.searchParams.get("ratingsort") as RatingSort,
   };
 
   const { slicedBooks, paginationOut } = await filterBooksDB(
