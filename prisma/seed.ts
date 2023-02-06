@@ -1,7 +1,7 @@
 import { prisma } from "../app/data/prisma.server";
 import audibleBooks from "../audiblebooks.json";
-import dropboxBooks from "../audiobooks.json";
-import type { AudibleJSON, DropboxJSON, Book } from "../app/types/bookTypes";
+// import dropboxBooks from "../audiobooks.json";
+import type { Book } from "../app/types/bookTypes";
 
 export type AudibleJSON = {
   id: string;
@@ -42,10 +42,12 @@ export type DropboxJSON = {
   description?: string;
   imageURL?: string;
 };
-
+//----------------------------------------------------------------
+//-- SEED ONLY AUDIBLE - Dropbox is loaded to Mongo via filewalker
+//----------------------------------------------------------------
 async function main() {
   const audible: AudibleJSON[] = audibleBooks;
-  const dropbox: DropboxJSON[] = dropboxBooks;
+  // const dropbox: DropboxJSON[] = dropboxBooks;
 
   //~ -------------------------
   //~  Audible
@@ -87,36 +89,36 @@ async function main() {
 
   //~ -------------------------
   //~  Dropbox
-  for (let book of dropbox) {
-    const { bookLengthMinutes, bookLengthText } = getDropboxBookLength(
-      book.bookLength
-    );
+  // for (let book of dropbox) {
+  //   const { bookLengthMinutes, bookLengthText } = getDropboxBookLength(
+  //     book.bookLength
+  //   );
 
-    const bookToInsert: Book = {
-      source: "dropbox",
-      dropboxLocation: book.fullPath,
-      title: book.title,
-      author: book.author,
-      description: book.description || "",
-      publishedYear: book.publishedYear || 0,
-      releaseDate: book.releaseDate ? new Date(book.releaseDate) : undefined,
-      narratedBy: book.narratedBy,
-      pageCount: book.pageCount,
-      bookLengthText: book.bookLength,
-      bookLengthMinutes,
-      imageURL: book.imageURL,
-      primaryCategory: book.pathPrimaryCat || "Unknown",
-      secondaryCategory: book.pathSecondaryCat || "Unknown",
-      genres: book.categories.flatMap((cat) =>
-        cat.trim().toLowerCase() !== "self-help"
-          ? cat.split("-").map((el) => el.trim())
-          : cat.trim()
-      ),
-    };
-    const bookIn = await prisma.books.create({
-      data: bookToInsert,
-    });
-  }
+  //   const bookToInsert: Book = {
+  //     source: "dropbox",
+  //     dropboxLocation: book.fullPath,
+  //     title: book.title,
+  //     author: book.author,
+  //     description: book.description || "",
+  //     publishedYear: book.publishedYear || 0,
+  //     releaseDate: book.releaseDate ? new Date(book.releaseDate) : undefined,
+  //     narratedBy: book.narratedBy,
+  //     pageCount: book.pageCount,
+  //     bookLengthText: book.bookLength,
+  //     bookLengthMinutes,
+  //     imageURL: book.imageURL,
+  //     primaryCategory: book.pathPrimaryCat || "Unknown",
+  //     secondaryCategory: book.pathSecondaryCat || "Unknown",
+  //     genres: book.categories.flatMap((cat) =>
+  //       cat.trim().toLowerCase() !== "self-help"
+  //         ? cat.split("-").map((el) => el.trim())
+  //         : cat.trim()
+  //     ),
+  //   };
+  //   const bookIn = await prisma.books.create({
+  //     data: bookToInsert,
+  //   });
+  // }
 }
 
 function getDropboxBookLength(bookLength: string | undefined) {

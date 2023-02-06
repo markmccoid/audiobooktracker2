@@ -1,4 +1,5 @@
 import { UserBooks } from "@prisma/client";
+import { ThreeOptionState } from "~/components/searchBar/SearchBarForm";
 
 export type Book = {
   id?: string;
@@ -44,8 +45,8 @@ export type BookFilter = {
   secondaryCategory?: string;
   author?: string;
   title?: string;
-  favoriteFlag?: boolean | undefined;
-  listenedToFlag?: boolean | undefined;
+  favoriteFlag?: ThreeOptionState | undefined;
+  listenedToFlag?: ThreeOptionState | undefined;
 };
 export type SortFields = "publishedYear" | "author" | "title";
 export type SortDirections = "asc" | "desc";

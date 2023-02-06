@@ -62,4 +62,6 @@ model Books {
   asin              String?
   genres            String[]
   userBooks         UserBooks[]
+  updatedAt         DateTime    @updatedAt
+  createdAt         DateTime    @default(value: now())
 }

@@ -1,10 +1,4 @@
-import {
-  Form,
-  Link,
-  useActionData,
-  useSubmit,
-  useTransition,
-} from "@remix-run/react";
+import { Form, Link, useActionData, useSubmit } from "@remix-run/react";
 import { Book } from "~/types/bookTypes";
 
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
@@ -44,7 +38,7 @@ const BookCard = ({ book }: { book: Book }) => {
         className={`border-b ${borderColor} ${titleTextColor} ${titleBGColor}  p-1 pb-2`}
       >
         <div className={`flex text-xl font-semibold justify-around`}>
-          {book.title}
+          <Link to={`./${book.id}`}>{book.title}</Link>
         </div>
         <div className="flex flex-row items-center justify-between">
           <div className="max-w-[65%]">

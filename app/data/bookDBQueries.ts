@@ -13,6 +13,7 @@ import metadata from "../../bookMetadata.json";
 import { isEmpty } from "~/utils/helpers";
 import { calculateOffsets } from "~/utils/pagination";
 import _ from "lodash";
+import { ThreeOptionState } from "~/components/searchBar/SearchBarForm";
 
 export async function getAllAudiobooksDB(userId: string) {
   // const books = await prisma.userBooks.findMany({
@@ -98,16 +99,7 @@ export async function getAllAudiobooksDB(userId: string) {
   // }
   return mergedBooks;
 }
-type Where = {
-  primaryCategory?: {
-    equals: string;
-    mode: "insenitive" | "default";
-  };
-  secondaryCategory?: {
-    equals: string;
-    mode: "insenitive" | "default";
-  };
-};
+
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
 //~ Filter Books Data
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
@@ -117,7 +109,7 @@ export const filterBooksDB = async (
   sort: SortOptions,
   pagination: Pagination
 ) => {
-  console.log("SORT OPTS", sort);
+  // console.log("SORT OPTS", sort);
   const pageSize = pagination?.pageSize || 15;
   const offset = pagination?.offset || 0;
 
@@ -292,68 +284,82 @@ export const updateUserBooksDB = async (
 };
 
 //~ -------------------------------------------------
-//~ Flatten UserBooks data
+//~ Filter books based on favorite and listenedTo states
+//~ Any returned books will have their userBookObject data
+//~ flattened so it matches Book type
 //~ -------------------------------------------------
 function mergeAndFilterBooks(
   books: QueryBookwUserBook[],
   userBooksFilter: {
-    favorite: boolean;
-    listenedTo: boolean;
+    favorite: ThreeOptionState;
+    listenedTo: ThreeOptionState;
   }
 ) {
   let mergedBooks: Book[] = [];
-  // Loop through books and if it contains userBooks, then merge the data
-  // assumption is that there will be either zero or one item in the array per user.
-  const { favorite: showOnlyFavorite, listenedTo: showOnlyListendTo } =
+  const { favorite: favoriteState, listenedTo: listenedToState } =
     userBooksFilter;
+  //-- Loop through books and filter based on passed favorite and
+  //-- listenedTo states.
   for (const book of books) {
     const userBookObject =
       book?.userBooks?.length === 1 ? book.userBooks[0] : undefined;
-    // Bail if this book has no userbook record and filter for showing fav or listened to is set
-    if (!userBookObject && (showOnlyFavorite || showOnlyListendTo)) continue;
 
-    // if no userbook filters set, then add to mergedBooks any record without a userBook entry
-    if (!userBookObject) {
-      mergedBooks.push(book);
+    // ListenedTo Check include, exclude or off state
+    const bookListenedToState = !!userBookObject?.listenedTo;
+    if (!includeBookThreeOptionCheck(bookListenedToState, listenedToState)) {
+      continue;
     }
 
-    // if userBook entry exists, flattend userBook fields and check for userbook filters
-    if (userBookObject) {
-      if (showOnlyFavorite || showOnlyListendTo) {
-        if (
-          (showOnlyFavorite && !userBookObject?.favorite) ||
-          (showOnlyListendTo && !userBookObject?.listenedTo)
-        ) {
-          continue;
-        }
-      }
-
-      let buildMerge = {
-        favorite: userBookObject?.favorite,
-        listenedTo: userBookObject?.listenedTo,
-        comments: userBookObject?.comments,
-        rating: userBookObject?.rating,
-      };
-      delete book.userBooks;
-      mergedBooks.push({ ...book, ...buildMerge });
+    // Favorite Check include, exclude or off state
+    const bookFavoriteState = !!userBookObject?.favorite;
+    if (!includeBookThreeOptionCheck(bookFavoriteState, favoriteState)) {
+      continue;
     }
+
+    let buildMerge = {
+      favorite: userBookObject?.favorite,
+      listenedTo: userBookObject?.listenedTo,
+      comments: userBookObject?.comments,
+      rating: userBookObject?.rating,
+    };
+    delete book.userBooks;
+    mergedBooks.push({ ...book, ...buildMerge });
   }
-  // mergedBooks = books.map((book) => {
-  //   let mergedBook: QueryBookwUserBook = { ...book };
-  //   delete mergedBook.userBooks;
+  //-- Loop end
 
-  //   if (book?.userBooks?.length === 1) {
-  //     if (book.userBooks[0].favorite && !userBooksFilter.favorite) return;
-
-  //     mergedBook = {
-  //       ...mergedBook,
-  //       favorite: book.userBooks[0].favorite,
-  //       listenedTo: book.userBooks[0].listenedTo,
-  //       comments: book.userBooks[0].comments,
-  //       rating: book.userBooks[0].rating,
-  //     };
-  //   }
-  //   return mergedBook;
-  // });
   return mergedBooks;
 }
+
+const includeBookThreeOptionCheck = (
+  bookState: boolean,
+  filterState: ThreeOptionState | undefined
+) => {
+  // if filterState is off or undefined
+  //! Return true means that this book SHOULD be included in results
+  //! Return false means that this book should NOT be include in results
+  /**
+   * bookState = false - filterState = undefined - true
+   * bookState = false - filterState = off       - true
+   * bookState = false - filterState = include   - false
+   * bookState = false - filterState = exclude   - true
+   
+   * bookState = true - filterState = undefined - true
+   * bookState = true - filterState = off       - true
+   * bookState = true - filterState = include   - true
+   * bookState = true - filterState = exclude   - false
+   */
+
+  if (!bookState) {
+    if (filterState === "include") {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  if (filterState === "exclude") {
+    return false;
+  } else {
+    return true;
+  }
+};

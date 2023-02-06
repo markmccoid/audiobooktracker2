@@ -9,7 +9,9 @@ import {
 import { Book, RatingSort } from "~/types/bookTypes";
 
 import BookCard from "~/components/audiobooks/BookCard";
-import SearchBarForm from "~/components/audiobooks/SearchBarForm";
+import SearchBarForm, {
+  ThreeOptionState,
+} from "~/components/searchBar/SearchBarForm";
 import { getUserFromSession } from "~/data/session.sever";
 
 import BookPagination from "~/components/audiobooks/BookPagination";
@@ -38,12 +40,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const url = new URL(request.url);
 
-  const favoriteFlag = parseBooleanFromString(
-    url.searchParams.get("favorited")
-  );
-  const listenedToFlag = parseBooleanFromString(
-    url.searchParams.get("listenedToFlag")
-  );
+  const favoriteState = url.searchParams.get("favorited");
+  const listenedToState = url.searchParams.get("listenedToState");
+
   const sortDirection = (
     url.searchParams.get("sortdirection") ? "desc" : "asc"
   ) as SortDirections;
@@ -56,8 +55,8 @@ export const loader: LoaderFunction = async ({ request }) => {
       | string
       | undefined,
     source: url.searchParams.get("source") as string | undefined,
-    favoriteFlag: favoriteFlag,
-    listenedToFlag: listenedToFlag,
+    favoriteFlag: favoriteState as ThreeOptionState,
+    listenedToFlag: listenedToState as ThreeOptionState,
   };
   const pagination = {
     offset: parseInt(url.searchParams.get("offset")),

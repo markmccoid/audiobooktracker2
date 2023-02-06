@@ -1,22 +1,23 @@
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams, Link } from "@remix-run/react";
 import { getBookById } from "~/data/audiobookGet.server";
 
 export default function $bookid() {
-  const bookData = useLoaderData();
-  console.log("bookData - $", bookData);
+  const bookId = useLoaderData();
+  console.log("bookData - $", bookId);
   const params = useParams();
 
   return (
     <>
       <h1 className="text-xl">Book Id Dynamic route</h1>
       <div>{params.bookid}</div>
-      <div>TEST{bookData.title}</div>
-      <div>{bookData.author}</div>
-      <div>{bookData.releaseYear}</div>
+      <Link to="../">Go Back</Link>
+      <Outlet />
     </>
   );
 }
 
 export function loader({ params }) {
-  return getBookById(params.bookid);
+  // Need a query that will return a book based on the bookId passed in params
+  console.log("params", params);
+  return params.bookId;
 }

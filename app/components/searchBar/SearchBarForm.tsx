@@ -3,9 +3,15 @@ import {
   Form,
   useNavigate,
   useSearchParams,
-  useTransition,
 } from "@remix-run/react";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Categories } from "~/data/audiobookGet.server";
 import _ from "lodash";
 import {
@@ -14,13 +20,17 @@ import {
   AiOutlineCloseCircle,
 } from "react-icons/ai";
 import { BsEarbuds } from "react-icons/bs";
+import { BsSlashLg } from "react-icons/bs";
 import SearchInput from "../SearchInputs/SearchInput";
+import ThreeOptionState from "../input/ThreeOptionState";
+import ThreeOptionStateComponent from "../input/ThreeOptionState";
 
 type Props = {
   categories: Categories;
   totalBooks: number;
 };
 
+export type ThreeOptionState = "off" | "include" | "exclude";
 //-------------------------------------------
 //-- Temporary categories mappings
 //-------------------------------------------
@@ -79,24 +89,38 @@ const ratingReducer = (
   }
   return state;
 };
+
+const threeWayReducer = (
+  state: ThreeOptionState,
+  action: { type: ThreeOptionState }
+) => {
+  switch (action.type) {
+    case "include":
+      state = "exclude";
+      break;
+    case "exclude":
+      state = "off";
+      break;
+    default:
+      state = "include";
+      break;
+  }
+  return state;
+};
 //~ --------------------------------------------------------
 //~ SearchBarForm Component ------
 //~ --------------------------------------------------------
 function SearchBarForm({ totalBooks }: Props) {
   const [params, setParams] = useSearchParams();
   const [secondCats, setSecondCats] = useState<string[]>([]);
-  const navigate = useNavigate();
+
   const submit = useSubmit();
   const [ratingSortState, toggleRSState] = useReducer(ratingReducer, "off");
+
   // Form Refs
   const formRef = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const testRef = useRef<HTMLInputElement>(null);
   const catRef = useRef<HTMLSelectElement>(null);
   const subCatRef = useRef<HTMLSelectElement>(null);
-
-  const [favoriteState, setFavoriteState] = useState(false);
-  const [isListenedTo, setIsListenedTo] = useState(false);
 
   const newParams = useMemo(
     () => ({
@@ -113,12 +137,10 @@ function SearchBarForm({ totalBooks }: Props) {
     [params]
   );
 
-  //~ For icon search entries (fav and listenedto)
+  //~ For changes in ratingSortState
   useEffect(() => {
-    if (formRef?.current) {
-      handleChange(formRef.current);
-    }
-  }, [isListenedTo, favoriteState, ratingSortState]);
+    db_handleChange(formRef.current);
+  }, [ratingSortState]);
 
   // Whenever params change, we need to deal with the
   // secondary categories.  First populating them with the appropriate
@@ -142,16 +164,9 @@ function SearchBarForm({ totalBooks }: Props) {
   };
   //
 
-  const clearSearchParams = () => {
-    setSecondCats([]);
-    setIsListenedTo(false);
-    setFavoriteState(false);
-    formRef.current?.reset();
-    submit(formRef.current, { replace: true });
-    // navigate("/");
-  };
-
-  const submitForm = () => {
+  // This currently isn't debounced because it is only used
+  // to submit on a clear when using the inputField for Author and Title
+  const submitForm = useCallback(() => {
     if (formRef.current) {
       handleChange(formRef.current);
     } else {
@@ -159,14 +174,18 @@ function SearchBarForm({ totalBooks }: Props) {
         "Form Ref not Initialized, can't submit form... SearchBarForm.tsx"
       );
     }
-  };
+  }, [formRef.current]);
+
   //~ ----------------------------------
   //~ Auto Form submit with debouncing
   //~ ----------------------------------
   function handleChange(targetForm: HTMLFormElement) {
     submit(targetForm, { replace: true });
   }
-  const db_handleChange = _.debounce((e) => handleChange(e), 400);
+  const db_handleChange = useCallback(
+    _.debounce((e) => handleChange(e), 400),
+    []
+  );
   //~ ----------------------------------
 
   return (
@@ -276,49 +295,39 @@ function SearchBarForm({ totalBooks }: Props) {
           </div> */}
           {/* FAVORITES END -------------------------*/}
           {/* Favorite Flag */}
-          <div
-            onClick={() => {
-              setFavoriteState((prev) => !prev);
-            }}
-          >
-            <input
-              type="hidden"
-              name="favorited"
-              id="favorited"
-              value={favoriteState.toString()}
+
+          <div className="flex ">
+            {/* <div
+              className="ml-2 mr-3 mt-4"
+              onClick={() => {
+                toggleFavoriteState({ type: favoriteState });
+              }}
+            >
+              <input
+                type="hidden"
+                name="favorited"
+                id="favorited"
+                value={favoriteState.toString()}
+              /> */}
+            <ThreeOptionStateComponent
+              IconExclude={AiFillHeart}
+              IconInclude={AiFillHeart}
+              IconOffOverlay={BsSlashLg}
+              includeColor="red"
+              fieldName="favorited"
+              submitFunction={() => db_handleChange(formRef.current)}
             />
-            {favoriteState ? (
-              <AiFillHeart size={35} color="red" />
-            ) : (
-              <AiOutlineHeart size={35} />
-            )}
-          </div>
-          {/* ListenedTo Flag */}
-          <div
-            onClick={() => {
-              setIsListenedTo((prev) => !prev);
-            }}
-          >
-            <input
-              type="hidden"
-              name="listenedToFlag"
-              id="listenedToFlag"
-              value={isListenedTo.toString()}
+            {/* </div> */}
+            {/* ListenedTo Three Option State off, include, exclude */}
+            <ThreeOptionStateComponent
+              IconExclude={BsEarbuds}
+              IconInclude={BsEarbuds}
+              includeColor="green"
+              IconOffOverlay={BsSlashLg}
+              fieldName="listenedToState"
+              submitFunction={() => db_handleChange(formRef.current)}
             />
-            {isListenedTo ? (
-              <BsEarbuds size={35} color="green" />
-            ) : (
-              <BsEarbuds size={35} />
-            )}
           </div>
-          {/* Clear Button */}
-          {/* <button
-            onClick={clearSearchParams}
-            className="bg-cerulean-blue-500 text-white text-xl px-4 py-1 border border-cerulean-blue-900 rounded-lg
-            hover:bg-cerulean-blue-400 transition-all"
-          >
-            Clear
-          </button> */}
         </div>
         <div className="flex flex-col items-center border border-gray-800 bg-cerulean-blue-300 rounded-md px-2">
           <div className="text-xl">Books</div>
