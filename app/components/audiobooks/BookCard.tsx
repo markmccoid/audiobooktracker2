@@ -19,6 +19,7 @@ const BookCard = ({ book }: { book: Book }) => {
   const audibleLink = book?.asin
     ? `https://www.audible.com/pd/${book?.asin}`
     : undefined;
+  //-- Dynamic Styling
   const twColor = book.source === "audible" ? "audible" : "cerulean-blue";
   const titleBGColor =
     book.source === "audible" ? `bg-audible-500` : `bg-cerulean-blue-500`;
@@ -30,6 +31,8 @@ const BookCard = ({ book }: { book: Book }) => {
       : `border-b-cerulean-blue-900`;
   const cardBGColor =
     book.source === "audible" ? `bg-audible-300` : `bg-cerulean-blue-300`;
+  //-- Dynamic Styling END
+
   return (
     <div
       className={`flex flex-col w-[375px] h-[475px] border border-black m-3 ${cardBGColor}`}

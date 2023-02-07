@@ -1,5 +1,8 @@
+import { LoaderFunction } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams, Link } from "@remix-run/react";
 import { getBookById } from "~/data/audiobookGet.server";
+import { getSingleBook } from "~/data/bookDBQueries";
+import { getUserFromSession } from "~/data/session.sever";
 
 export default function $bookid() {
   const bookId = useLoaderData();
@@ -9,15 +12,18 @@ export default function $bookid() {
   return (
     <>
       <h1 className="text-xl">Book Id Dynamic route</h1>
-      <div>{params.bookid}</div>
-      <Link to="../">Go Back</Link>
+      <Link to="../" className="button">
+        <div>{params.bookid}</div>
+        Go Back
+      </Link>
       <Outlet />
     </>
   );
 }
 
-export function loader({ params }) {
-  // Need a query that will return a book based on the bookId passed in params
-  console.log("params", params);
-  return params.bookId;
-}
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const userId = await getUserFromSession(request);
+  // Get book data with user data merged in
+  const bookData = await getSingleBook(userId, params.bookId);
+  return bookData || null;
+};

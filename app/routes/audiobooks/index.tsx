@@ -36,13 +36,12 @@ const loaderSchema = z.object({
 export const loader: LoaderFunction = async ({ request }) => {
   const categories = getCategories();
   const userId = await getUserFromSession(request);
-  console.log("in Loader Function", userId);
+  console.log("in Loader Function USERID=", userId);
 
   const url = new URL(request.url);
 
   const favoriteState = url.searchParams.get("favorited");
   const listenedToState = url.searchParams.get("listenedToState");
-
   const sortDirection = (
     url.searchParams.get("sortdirection") ? "desc" : "asc"
   ) as SortDirections;
@@ -73,6 +72,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     sort,
     pagination
   );
+
   // build the Next and Prev URLs to send to a Link component
   // NOTE: we are setting the searchParams only so that we extract the new
   //    path with the new offest in the url.search
@@ -84,7 +84,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   const prevURL = paginationOut.prevAvailable
     ? `${url.pathname}${url.search}`
     : undefined;
-  return {
+
+  return json({
     categories,
     books: slicedBooks,
     nextURL,
@@ -92,7 +93,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     currentPage: paginationOut.currentPage,
     totalPages: paginationOut.totalPages,
     totalBooks: paginationOut.totalBooks,
-  };
+  });
 };
 
 //--------------------------------------------------
@@ -149,9 +150,7 @@ type LoaderData = {
 //-- COMPONENT
 //--------------------------------------------------
 export default function Index() {
-  // const [params] = useSearchParams();
-  // const transition = useTransition();
-  const navigate = useNavigate();
+  console.log("In audiobook route");
   const {
     categories,
     books,
@@ -184,7 +183,7 @@ export default function Index() {
   return (
     <div className="flex flex-col">
       {/* <SearchBar bookLimit={bookLimit} setBookLimit={setBookLimit} /> */}
-      <SearchBarForm totalBooks={totalBooks} />
+      <SearchBarForm categories={categories} totalBooks={totalBooks} />
 
       <div className="flex justify-center mr-14">
         <BookPagination

@@ -64,11 +64,11 @@ export async function getAllAudiobooksDB(userId: string) {
 
   //~ -------------------------------------------------
   //~ Flatten UserBooks data
-  let mergedBooks: Book[] & { userBooks: UserBooks[] } = [];
+  let mergedBooks: Book[] & { userBooks?: UserBooks[] } = [];
   // Loop through books and if it contains userBooks, then merge the data
   // assumption is that there will be either zero or one item in the array per user.
   mergedBooks = books.map((book) => {
-    let mergedBook: Book = { ...book };
+    let mergedBook: Book & { userBooks?: UserBooks[] } = { ...book };
     delete mergedBook.userBooks;
 
     if (book.userBooks.length === 1) {
@@ -98,6 +98,39 @@ export async function getAllAudiobooksDB(userId: string) {
   //   }
   // }
   return mergedBooks;
+}
+//~ -- -- -- -- -- -- -- -- --- -- -- -- --
+//~ Get a Single Book's Data
+//~ -- -- -- -- -- -- -- -- --- -- -- -- --
+export async function getSingleBook(userId: string, bookId: string) {
+  const book = await prisma.books.findFirst({
+    where: {
+      id: bookId,
+    },
+    include: {
+      userBooks: {
+        where: {
+          userId,
+        },
+      },
+    },
+  });
+
+  if (!book) return null;
+
+  const userBookInfo = {
+    favorite: book?.userBooks[0]?.favorite,
+    listenedTo: book?.userBooks[0]?.listenedTo,
+    comments: book?.userBooks[0]?.comments,
+    rating: book?.userBooks[0]?.rating,
+  };
+  let mergedBook: Book & { userBooks?: UserBooks[] } = {
+    ...book,
+    ...userBookInfo,
+  };
+  delete mergedBook.userBooks;
+  console.log("Merged Book", mergedBook);
+  return mergedBook;
 }
 
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
@@ -170,7 +203,7 @@ export const filterBooksDB = async (
   //   paginationOut.nextOffset,
   //   slicedBooks.length
   // );
-
+  console.log("returning books filterBooksDB", slicedBooks.length);
   return { slicedBooks, paginationOut };
 };
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
