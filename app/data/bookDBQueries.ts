@@ -15,90 +15,6 @@ import { calculateOffsets } from "~/utils/pagination";
 import _ from "lodash";
 import { ThreeOptionState } from "~/components/searchBar/SearchBarForm";
 
-export async function getAllAudiobooksDB(userId: string) {
-  // const books = await prisma.userBooks.findMany({
-  //   where: {
-  //     AND: [
-  //       { userId, favorite: true },
-  //       { books: { title: { contains: "season", mode: "insensitive" } } },
-  //     ],
-  //   },
-
-  //   include: {
-  //     books: {
-  //       select: {
-  //         author: true,
-  //         title: true,
-  //       },
-  //     },
-  //   },
-  // });
-
-  const books = await prisma.books.findMany({
-    where: {
-      author: {
-        contains: "",
-        mode: "insensitive",
-      },
-      title: {
-        contains: "multi",
-        mode: "insensitive",
-      },
-      // primaryCategory: {
-      //   equals: "fiction",
-      //   mode: "insensitive",
-      // },
-      // secondaryCategory: {
-      //   equals: "horror",
-      //   mode: "insensitive",
-      // },
-    },
-    include: {
-      userBooks: {
-        where: {
-          userId,
-        },
-      },
-    },
-  });
-
-  //~ -------------------------------------------------
-  //~ Flatten UserBooks data
-  let mergedBooks: Book[] & { userBooks?: UserBooks[] } = [];
-  // Loop through books and if it contains userBooks, then merge the data
-  // assumption is that there will be either zero or one item in the array per user.
-  mergedBooks = books.map((book) => {
-    let mergedBook: Book & { userBooks?: UserBooks[] } = { ...book };
-    delete mergedBook.userBooks;
-
-    if (book.userBooks.length === 1) {
-      mergedBook = {
-        ...mergedBook,
-        favorite: book.userBooks[0].favorite,
-        listenedTo: book.userBooks[0].listenedTo,
-        comments: book.userBooks[0].comments,
-        rating: book.userBooks[0].rating,
-      };
-    }
-    return mergedBook;
-  });
-  //~ -------------------------------------------------
-  // // userBooksData?.UserBooks.map(book => book.id)
-  // if (userBooksData) {
-  //   for (let bookData of userBooksData) {
-  //     const index = books.findIndex((book) => book.id === bookData.bookId);
-  //     books[index] = {
-  //       ...books[index],
-  //       rating: bookData?.rating,
-  //       favorite: bookData?.favorite,
-  //       listenedTo: bookData?.listenedTo,
-  //       listenedToDate: bookData?.listenedToDate,
-  //       comments: bookData?.comments,
-  //     };
-  //   }
-  // }
-  return mergedBooks;
-}
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
 //~ Get a Single Book's Data
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
@@ -129,7 +45,7 @@ export async function getSingleBook(userId: string, bookId: string) {
     ...userBookInfo,
   };
   delete mergedBook.userBooks;
-  console.log("Merged Book", mergedBook);
+
   return mergedBook;
 }
 
@@ -203,9 +119,10 @@ export const filterBooksDB = async (
   //   paginationOut.nextOffset,
   //   slicedBooks.length
   // );
-  console.log("returning books filterBooksDB", slicedBooks.length);
+
   return { slicedBooks, paginationOut };
 };
+
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
 //~ Process passed filters and return
 //~ Where Statements
@@ -289,7 +206,25 @@ function buildWhereStmt(processedFilters: ProcessedFilter) {
 }
 
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
+//~ Upsert Books Data
+//~ This will be the main book record
+//~ -- -- -- -- -- -- -- -- --- -- -- -- --
+export const updateBookDB = async (bookId: string, data: Partial<Book>) => {
+  try {
+    const bookUpdate = await prisma.books.update({
+      where: {
+        id: bookId,
+      },
+      data,
+    });
+    return bookUpdate;
+  } catch (e) {
+    return `Error updating book record ${e}`;
+  }
+};
+//~ -- -- -- -- -- -- -- -- --- -- -- -- --
 //~ Upsert UserBooks Data
+//~ This will be favorite, listenedTo, Rating and Comments
 //~ -- -- -- -- -- -- -- -- --- -- -- -- --
 export const updateUserBooksDB = async (
   userId: string,
@@ -363,6 +298,12 @@ function mergeAndFilterBooks(
   return mergedBooks;
 }
 
+//~ -------------------------------------------------
+//~ when checking Favarite or ListenedTo, the filter can
+//~ be in one of three states (off, include, exclude)
+//~ This is a helper function to determine if the book should
+//~ be include or excluded based on the current state and the userBooks value
+//~ -------------------------------------------------
 const includeBookThreeOptionCheck = (
   bookState: boolean,
   filterState: ThreeOptionState | undefined

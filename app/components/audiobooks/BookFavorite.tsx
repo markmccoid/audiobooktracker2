@@ -10,7 +10,7 @@ function BookFavorite({ book }: Props) {
   const favoriteFlag = isFaving ? !book?.favorite : book?.favorite;
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" className="flex">
       <input
         type="hidden"
         id="favorite"

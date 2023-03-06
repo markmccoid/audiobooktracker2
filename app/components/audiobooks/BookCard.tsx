@@ -38,9 +38,11 @@ const BookCard = ({ book }: { book: Book }) => {
       className={`flex flex-col w-[375px] h-[475px] border border-black m-3 ${cardBGColor}`}
     >
       <div
-        className={`border-b ${borderColor} ${titleTextColor} ${titleBGColor}  p-1 pb-2`}
+        className={`flex flex-col border-b ${borderColor} ${titleTextColor} ${titleBGColor} p-1`}
       >
-        <div className={`flex text-xl font-semibold justify-around`}>
+        <div
+          className={`text-xl font-semibold ml-1 overflow-hidden text-ellipsis whitespace-nowrap`}
+        >
           <Link to={`./${book.id}`}>{book.title}</Link>
         </div>
         <div className="flex flex-row items-center justify-between">
@@ -57,8 +59,8 @@ const BookCard = ({ book }: { book: Book }) => {
         <a
           href={audibleLink || amazonLink}
           target="_blank"
-          className="mx-2 mt-2 flex-shrink-0 hover:border-2 transition-all
-          hover:border-cerulean-blue-600 hover:rounded-lg"
+          className="mx-2 mt-2 flex-shrink-0 transition-all
+          hover:border-red-600 hover:scale-105"
         >
           <BookImage
             imageUrl={book.imageURL}

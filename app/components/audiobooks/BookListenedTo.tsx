@@ -12,7 +12,7 @@ function BookListenedTo({ book }: Props) {
   const optimisticValue = settingItem ? !BookListenedTo : BookListenedTo;
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" className="flex">
       <input
         type="hidden"
         id="listenedto"

@@ -3,21 +3,21 @@ import { ThreeOptionState } from "~/components/searchBar/SearchBarForm";
 
 export type Book = {
   id?: string;
-  asin?: string;
-  dropboxLocation?: string;
-  source: "audible" | "dropbox";
+  asin?: string | undefined | null;
+  dropboxLocation?: string | undefined | null;
+  source: string | "audible" | "dropbox";
   audioFileCount?: number;
   title: string;
   description: string;
   author: string;
-  narratedBy?: string;
+  narratedBy?: string | undefined | null;
   publishedYear: number;
-  releaseDate?: Date;
-  publisher?: string;
-  pageCount?: number;
-  imageURL?: string;
-  bookLengthText?: string;
-  bookLengthMinutes?: number;
+  releaseDate?: Date | undefined | null;
+  publisher?: string | undefined | null;
+  pageCount?: number | undefined | null;
+  imageURL?: string | undefined | null;
+  bookLengthText?: string | undefined | null;
+  bookLengthMinutes?: number | undefined | null;
   genres: string[];
   primaryCategory: string;
   secondaryCategory: string;
@@ -27,14 +27,14 @@ export type Book = {
   listenedToDate?: Date;
   favorite?: boolean | undefined | null;
 };
-export type QueryBookwUserBook = Book & { userBooks?: UserBooks[] };
+export type QueryBookwUserBook = Book & { userBooks?: UserBookData[] };
 
 // Must conform to the prisma schema for UserBooks
 export type UserBookData = {
-  comments?: string;
-  favorite?: boolean;
-  rating?: number;
-  listenedTo?: boolean;
+  comments?: string | undefined | null;
+  favorite?: boolean | undefined | null;
+  rating?: number | undefined | null;
+  listenedTo?: boolean | undefined | null;
 };
 
 //~ --------------------------------------------
